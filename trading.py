@@ -16,10 +16,42 @@ def fetch_market_data(
     df = yf.download(ticker, period=lookback, interval=interval, progress=False)
     if df.empty:
         raise ValueError("No data returned; check ticker or interval")
-    # Standardize column names to expected OHLC casing
-    cols = {c.lower(): c for c in df.columns}
-    rename_map = {df.columns[i]: name.title() for i, name in enumerate(cols.keys())}
-    df = df.rename(columns=rename_map)
+    # Standardize/flatten columns to expected OHLC casing and ensure simple Index
+    # yfinance can return MultiIndex columns (e.g., when requesting multiple tickers
+    # or depending on version). Flatten robustly and normalize names.
+    if isinstance(df.columns, pd.MultiIndex):
+        # If first level contains the ticker symbol, select it
+        try:
+            level0 = df.columns.get_level_values(0)
+            if ticker in level0:
+                df = df.xs(ticker, axis=1, level=0, drop_level=True)
+            else:
+                df.columns = [c[-1] if isinstance(c, tuple) else str(c) for c in df.columns]
+        except Exception:
+            df.columns = [c[-1] if isinstance(c, tuple) else str(c) for c in df.columns]
+    else:
+        # Older/newer yfinance combos may still yield tuple-like entries
+        if any(isinstance(c, tuple) for c in df.columns):
+            df.columns = [c[-1] if isinstance(c, tuple) else str(c) for c in df.columns]
+
+    # Build a case-insensitive, space/underscore-insensitive map
+    def _norm(name: str) -> str:
+        return str(name).lower().replace(" ", "").replace("_", "")
+
+    colmap = {_norm(c): c for c in df.columns}
+    rename = {}
+    for target in ["open", "high", "low", "close", "adjclose", "volume"]:
+        if target in colmap:
+            pretty = "Adj Close" if target == "adjclose" else target.title()
+            rename[colmap[target]] = pretty
+    df = df.rename(columns=rename)
+
+    # Sanity check required fields for the strategy
+    for required in ("High", "Low", "Close"):
+        if required not in df.columns:
+            raise ValueError(
+                f"Downloaded data missing required column '{required}'. Got columns: {list(df.columns)}"
+            )
     return df
 
 
@@ -57,12 +89,15 @@ def trade_high_low_bands(
     host: str = "127.0.0.1",
     port: int = 7497,
     client_id: int = 1,
+    dry_run: bool = False,
     market_data: Optional[pd.DataFrame] = None,
 ) -> str:
     """Compute latest signal using High-Low bands and execute via IB if needed.
 
     Trading passes parameters and market data to the logic, which returns a
     buy/sell/none signal. If a trade is signaled, a market order is submitted.
+
+    Set `dry_run=True` to skip placing orders and just report the signal.
 
     Returns a human-readable status string.
     """
@@ -81,6 +116,8 @@ def trade_high_low_bands(
         return "No trade signal"
 
     side = "BUY" if signal > 0 else "SELL"
+    if dry_run:
+        return f"Dry run: {side} signal for {ticker} (qty {quantity})"
     return execute_ib_order(
         ticker=ticker,
         side=side,
