@@ -1,5 +1,6 @@
 import argparse
 import csv
+import os
 from datetime import datetime, timezone
 from typing import List
 
@@ -53,6 +54,11 @@ def parse_args() -> argparse.Namespace:
         "--csv",
         metavar="PATH",
         help="Write results to CSV file (use '-' for stdout)",
+    )
+    p.add_argument(
+        "--append",
+        action="store_true",
+        help="Append to CSV file if it exists (otherwise create)",
     )
     return p.parse_args()
 
@@ -136,9 +142,17 @@ def main() -> None:
             writer.writeheader()
             writer.writerows(rows)
         else:
-            with open(args.csv, "w", newline="") as f:
+            mode = "a" if args.append else "w"
+            write_header = True
+            if args.append and os.path.exists(args.csv):
+                try:
+                    write_header = os.path.getsize(args.csv) == 0
+                except OSError:
+                    write_header = True
+            with open(args.csv, mode, newline="") as f:
                 writer = csv.DictWriter(f=f, fieldnames=fieldnames)
-                writer.writeheader()
+                if write_header:
+                    writer.writeheader()
                 writer.writerows(rows)
 
 

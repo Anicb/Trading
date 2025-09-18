@@ -80,6 +80,19 @@ python high_low_band_trading.py --symbol-list AAPL MSFT --dry-run --csv -
 python high_low_band_trading.py --symbol-list AAPL,MSFT,NVDA --dry-run --csv results.csv
 ```
 
+Append to an existing CSV file instead of overwriting:
+
+```bash
+# Append Apple runs to Apple.csv
+python high_low_band_trading.py --ticker AAPL --dry-run --csv Apple.csv --append
+
+# Append Google runs to Google.csv
+python high_low_band_trading.py --ticker GOOGL --dry-run --csv Google.csv --append
+
+# Append NVDA and TSLA runs to one file
+python high_low_band_trading.py --symbol-list NVDA TSLA --dry-run --csv mag7topbottom.csv --append
+```
+
 ### Dry Run
 
 To inspect signals without placing any orders, pass `dry_run=True`:
