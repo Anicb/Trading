@@ -170,12 +170,134 @@ Create a new repository on GitHub (if you haven't already).
 In your local folder, open a terminal and run:
 
 ```bash
+git init # to initialize git in local repo
 git remote set-url origin https://github.com/<your-username>/<your-repo>.git
 git push -u origin main
 ```
-If your local branch is called master, replace main with master.
-If you cloned from a different repo, you may need to run 'git remote remove origin' first, then 'git remote add origin ...'
+#### main vs master
 
+If your local branch is called master, replace main with master.
+
+When you push your code to GitHub, you need to specify the branch name. Most new repositories use main as the default branch, but older ones may use master.
+
+(check with ```git branch```).
+
+
+#### If you cloned from a different repo
+
+You need to run 'git remote remove origin' first, then 'git remote add origin ...'
+i.e.
+If you cloned from a different repository, your local repo’s remote (origin) points to the original source. You need to update it to your own GitHub repository.
+
+To check current remote:
+```git remote -v```
+
+Would give the following output:
+origin  https://github.com/jamwithai/arxiv-paper-curator (fetch)
+origin  https://github.com/jamwithai/arxiv-paper-curator (push)
+
+To change it:
+
+Remove the old remote: ```git remote remove origin```
+
+Add your own GitHub repo as remote:
+```git remote add origin https://github.com/your-username/your-repo.git```
+
+Push your branch:
+```git push -u origin main   # or master, depending on your branch name```
+
+#### Troubleshooting Git Errors when pushing local cloned repository to a new GitHub repository, understanding "remote" and "origin".
+
+---
+
+What are "remote" and "origin"?
+
+- **Remote**: In Git, a remote is a version of your project hosted elsewhere (usually on GitHub, GitLab, etc.).
+- **origin**: This is the default name Git gives to the main remote repository you cloned from or push to. You can have multiple remotes, but `origin` is the standard for the primary one.
+
+---
+
+##### Common Error: Push Rejected after removing Origin and adding Origin to your repo
+
+When you try to push your local branch to GitHub, you may see:
+
+```
+! [rejected] main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Anicb/Jam'
+hint: Updates were rejected because the remote contains work that you do not have locally.
+```
+
+**Reason:**  
+The remote repository already has commits that your local repo does not. Git prevents you from overwriting those changes.
+
+---
+
+##### Step-by-Step Resolution
+
+###### 1. Set Your Git Identity
+
+Git needs your name and email for commit history.
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+```
+
+###### 2. Set Branch Tracking
+
+If your local branch is not tracking the remote branch, set it:
+
+```bash
+git branch --set-upstream-to=origin/main main
+```
+
+###### 3. Pull Remote Changes
+
+Fetch and merge any changes from the remote repository:
+
+```bash
+git pull
+```
+
+If you see merge conflicts, resolve them in your code editor, then continue.
+
+###### 4. Add and Commit Your Changes
+
+Stage and commit your changes:
+
+```bash
+git add .
+git commit -m "moving local to git repo"
+```
+
+###### 5. Push to Your GitHub Repository
+
+Push your local branch to the remote repository:
+
+```bash
+git push
+```
+
+##### Error when Git Pull fails after setting branch tracking 
+
+The error fatal: refusing to merge unrelated histories occurs when your local repository and the remote repository have completely separate commit histories (e.g., both were initialized independently).
+
+###### How to Fix
+You can force Git to merge unrelated histories by adding the --allow-unrelated-histories flag:
+
+``` git pull origin main --allow-unrelated-histories ```
+
+This will merge the remote and local histories.
+You may be prompted to resolve merge conflicts (especially if both repos have files with the same name, like README.md or .env). Then resolve conflicts, commit, and push.
+---
+
+Notes
+
+- Always pull remote changes before pushing to avoid overwriting others' work.
+- If you see merge conflicts, resolve them before committing and pushing.
+- Setting your Git identity is required for all commits.
+
+---
 
 ### Clone directly into your GitHub repository
 You cannot "clone" directly into a new GitHub repository. Cloning always creates a local copy. To copy code from one repo to another on GitHub, you can:
