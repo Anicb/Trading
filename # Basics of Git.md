@@ -186,8 +186,8 @@ When you push your code to GitHub, you need to specify the branch name. Most new
 #### If you cloned from a different repo
 
 To clone,
-cd path/to/your/directory
-git clone https://github.com/username/repository.git
+```cd path/to/your/directory```
+```git clone https://github.com/username/repository.git```
 
 You need to run 'git remote remove origin' first, then 'git remote add origin ...'
 i.e.
